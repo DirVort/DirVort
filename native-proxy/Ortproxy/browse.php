@@ -1,6 +1,5 @@
 <?php
 
-// Set a secret key for encryption
 // $key = "OrtxTorNeverEqu0Knew";
 
 // The message to be encrypted
@@ -17,16 +16,48 @@
 // Output the decrypted message
 // echo $decrypted;
 
-if(isset($_POST['url'])){
-  $url = $_POST['url'];
-  
-   // Encrypt the message using AES-256-CBC encryption and base64 encoding
+// Get the URL to proxy from the query string
+$url = $_GET['url'];
 
-  // $encrypted = openssl_encrypt($url, "AES-256-CBC", $key, 0, "random_initialization_vector");
-  // $encrypted = base64_encode($encrypted);
-  $proxy_url = "https://www.proxywebsite.com/browse.php?u=$url";
-  header("Location: $proxy_url");
-  exit();
+// Check if the URL is valid
+if (!filter_var($url, FILTER_VALIDATE_URL)) {
+  http_response_code(400);
+  echo 'Invalid URL';
+  exit;
 }
 
-?>
+// Create a new cURL resource
+$curl = curl_init();
+
+// Set the cURL options
+curl_setopt_array($curl, [
+  CURLOPT_URL => $url,
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_MAXREDIRS => 10,
+]);
+
+// Execute the cURL request and get the response
+$response = curl_exec($curl);
+
+// Check for cURL errors
+if (curl_error($curl)) {
+  http_response_code(500);
+  echo 'cURL error: ' . curl_error($curl);
+  exit;
+}
+
+// Get the content type of the response
+$content_type = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
+
+// Set the content type header for the response
+header('Content-Type: ' . $content_type);
+
+// Output the response
+echo $response;
+
+// Close the cURL resource
+curl_close($curl);
+
+
+
